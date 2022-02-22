@@ -1,0 +1,32 @@
+@startuml
+salt
+{
+{T
++ Deployment Repository
+++ <color:blue>common                                    | <color:blue>Common variables and modules.
++++ <color:teal>environments                             | <color:teal>Global variables.
+++++ <color:teal>env_<environment>_common.tfvars         | <color:teal>Global Env. specific TF vars.
+++++ <color:red>env_<environment>.hcl                    | <color:red>Global Env. specific wrapper vars.
+++++ <color:teal>env_<environment>_<site>_common.tfvars  | <color:teal>Global Env. and site specific TF vars.
+++++ <color:red>env_<environment>_<site>.hcl             | <color:red>Global Env. and site specific wrapper vars.
+++
+++ <color:blue><resource>                                | <color:blue>Resource to be deployed.
++++ <color:teal>environments                             | <color:teal>Resource variables (Overrides Global Variables).
+++++ <color:teal>env_<environment>_common.tfvars         | <color:teal>Resource Env. specific TF vars.
+++++ <color:teal>env_<environment>_<site>_common.tfvars  | <color:teal>Resource Env. and site specific TF vars.
++++ <color:teal>main.tf                                  | <color:teal>Resource TF script
++++ <color:teal>variables.tf                             | <color:teal>Resource TF variables
++++ <color:teal>output.tf                                | <color:teal>Resource TF outputs
+++
+++ <color:blue><resource_groups>                         | <color:blue>Group of resources to be deployed.
++++ <color:blue><sub_resource>                           | <color:blue>Sub-Resource to be deployed.
+++++ <color:teal>environments                            | <color:teal>Sub-Resource variables (Overrides Global Variables).
++++++ <color:teal>env_<environment>_common.tfvars        | <color:teal>Sub-Resource Env. specific TF vars.
++++++ <color:teal>env_<environment>_<site>_common.tfvars | <color:teal>Sub-Resource Env. and site specific TF vars.
+++++ <color:teal>main.tf                                 | <color:teal>Sub-Resource TF script
+++++ <color:teal>variables.tf                            | <color:teal>Sub-Resource TF variables
+++++ <color:teal>output.tf                               | <color:teal>Sub-Resource TF outputs
+++ <color:blue>.gitignore                                | <color:blue>Repository maintenance.
+}
+}
+@enduml
