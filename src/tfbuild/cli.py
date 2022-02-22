@@ -1,7 +1,6 @@
 #!/usr/bin/python3 -u
 
 import sys
-import os
 from .actions import Action
 
 def main():

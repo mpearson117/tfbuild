@@ -88,14 +88,18 @@ class Base():
         language in the future, ie: json,yaml.
         """
 
+        if not os.path.isfile(self.common_shell_file):
+            console.error("  No Common Wrapper Shell File available ! Please create:\n  " + self.common_shell_file + "\n  and add configuration content if necessary !\n", showTime=False)
+            sys.exit(2)
+
         try:    
             with open(self.common_shell_file, 'r') as fp:
                 obj = hcl2.load(fp)
                 self.china_deployment = obj.get('china_deployment', '')
-                self.region = obj.get('aws_region', obj.get('azr_region', ''))
                 self.dr = obj.get('dr', '')
-                self.tf_var_mode = obj.get('tf_var_mode', '')
                 self.global_resource = obj.get('global_resource', '')
+                self.mode = obj.get('mode', '')
+                self.region = obj.get('region', '')
                 self.tf_cloud_backend = obj.get('tf_cloud_backend', '')               
                 self.tf_cloud_org2 = obj.get('tf_cloud_org', '')               
                 if sys.platform.startswith("win"):
@@ -103,7 +107,7 @@ class Base():
                 else:
                     self.tf_cli_args = obj.get('tf_cli_args', '').replace('"','').replace('${REPO_PATH}',self.repo_root).replace('$REPO_PATH',self.repo_root)
         except KeyError:
-            console.error("  Missing Common Shell Env File: \n          {}\n".format(self.common_shell_file))
+            console.error("  Missing Common Shell Env File: \n          {}\n".format(self.common_shell_file), showTime=False)
             sys.exit(2)
         except(ValueError):
             pass   
@@ -121,32 +125,29 @@ class Base():
             self.var_file_args_list.append(self.secret_path)
 
         if self.location == self.repo_root:
-            console.error("  You are executing " + self.app_name.upper() + " from the repository root !\n          Please ensure execution from a resurce directory !\n")
+            console.error("  You are executing " + self.app_name.upper() + " from the repository root !\n          Please ensure execution from a resurce directory !\n", showTime=False)
             sys.exit(2)
 
         if not os.path.isfile(self.local_env_file):
-            console.error("  No Local Environment Files at this location !\n")
+            console.error("  No Local Environment Files at this location !\n", showTime=False)
             if not any(File.endswith(".tf") for File in os.listdir(self.location)):
-                console.error("  You are executing " + self.app_name.upper() + " from an improper location,\n          Please ensure execution from a resurce directory !\n")
+                console.error("  You are executing " + self.app_name.upper() + " from an improper location,\n          Please ensure execution from a resurce directory !\n", showTime=False)
                 sys.exit(2)
             else:
-                console.error("  Please create:\n          " + self.local_env_file + "\n          and add configuration content if necessary !\n")
+                console.error("  Please create:\n          " + self.local_env_file + "\n          and add configuration content if necessary !\n", showTime=False)
                 sys.exit(2)
         else:
             self.var_file_args_list.append(self.local_env_file)
 
         if not os.path.isfile(self.common_env_file):
-            console.info("  No Common Environment File available ! Please create:\n            " + self.common_env_file + "\n            and add configuration content if necessary !\n")
+            console.success("  No Common Environment File available ! Please create:\n            " + self.common_env_file + "\n            and add configuration content if necessary !\n", showTime=False)
             #sys.exit(2)
         else:
             self.var_file_args_list.append(self.common_env_file)
 
         if not self.region:
-            if self.cloud == "aws":
-                console.error("  Specify 'aws_region' in the file: \n          " + self.common_shell_file)
-                sys.exit(2)
-            elif self.cloud == "azr":
-                console.error("  Specify 'azr_region' in the file: \n          " + self.common_shell_file)
+            if self.cloud in ['aws', 'azr']:
+                console.error("  Specify 'region' in the file: \n          " + self.common_shell_file, showTime=False)
                 sys.exit(2)
 
         for env_file in self.var_file_args_list:
@@ -158,12 +159,20 @@ class Base():
         return bucket, backend_region for deployment.
         """
 
-        if self.tf_var_mode == "true":
-            self.prefix = "{}-{}".format(self.project, self.tf_var_mode)
-            self.module = "{}-{}".format(self.resource, self.tf_var_mode)
+        if self.target_environment:
+            if self.mode == "true":
+                self.prefix = "{}-{}-{}".format(self.project, self.target_environment, self.mode)
+                self.module = "{}-{}".format(self.resource, self.mode)
+            else:
+                self.prefix = "{}-{}".format(self.project, self.target_environment)
+                self.module = self.resource
         else:
-            self.prefix = self.project
-            self.module = self.resource
+            if self.mode == "true":
+                self.prefix = "{}-{}".format(self.project, self.mode)
+                self.module = "{}-{}".format(self.resource, self.mode)
+            else:
+                self.prefix = self.project
+                self.module = self.resource
 
         if self.cloud == "aws":
             if self.global_resource == "True" or self.resource.__contains__("53") == True:
@@ -230,7 +239,9 @@ class Base():
             **{"TF_VAR_backend_region": self.backend_region},
             **{"TF_VAR_project": self.project},
             **{"TF_VAR_account": self.account},
+            **{"TF_VAR_mode": self.mode},
             **{"TF_VAR_env": self.environment},
+            **{"TF_VAR_site": self.target_environment},
             **{"TF_VAR_azrsa": self.bucket},
             **{"TF_VAR_bucket": self.bucket},
             **{"TF_VAR_prefix": self.prefix},

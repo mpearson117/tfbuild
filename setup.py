@@ -1,8 +1,8 @@
 import os
 from setuptools import setup
 
-with open("VERSION", "r") as version_fd:
-    VERSION = version_fd.read().strip()
+#with open("VERSION", "r") as version_fd:
+#    VERSION = version_fd.read().strip()
 
 with open("README.md", "r") as readme_fd:
     long_description = readme_fd.read()
@@ -10,7 +10,7 @@ with open("README.md", "r") as readme_fd:
 
 setup(
     name="tfbuild",
-    version=VERSION,
+    version="1.0.0",
     author="Michael Pearson",
     description="TFBuild is a command line tool for Terraform ",
     url="https://github.com/mpearson117/tfbuild",
@@ -24,6 +24,7 @@ setup(
         "confuse",
         "GitPython", 
         "jsonpickle", 
+        "py_console",
         "PyYAML", 
         "python-hcl2",
         "schematics>=2.0,<3.0", 
@@ -33,7 +34,7 @@ setup(
         'dev:python_version > "3"': ["pytest>=5.0,<6",],
         "dev": {"pytest-cov", "pytest-mock", "codecov"},
     },
-    entry_points={"console_scripts": ["tfbuild = tfbuild.cli:main",],},
+    entry_points={"console_scripts": ["tfbuild = tfbuild.cli:main","tfb = tfbuild.cli:main",],},
     classifiers=[
         "Development Status :: 5 - Production/Stable",
         "Environment :: Console",
