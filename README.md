@@ -11,7 +11,6 @@ This wrapper is primarily built to standardise:
 - GCP implementation also possible, coming soon...
 
 ## Support
-***
 <br /> 
 
 Currently tfbuild supports the following Operating Systems:
@@ -20,7 +19,6 @@ Currently tfbuild supports the following Operating Systems:
 - Windows
 
 ## Installation
-***
 <br /> 
 
 1. Python > 3.8 required (3.10 and higher on MacOS M1)
@@ -40,7 +38,6 @@ pip install -e .
 ```
 
 ## Terraform execution prerequisites
-***
 <br /> 
 
 tfbuild assumes that the deployment is executed from a git repository with the following setup:
@@ -114,7 +111,6 @@ Example:
 - DR SA Name: `inftfstateshareddevdr`
 
 ## Usage
-***
 <br /> 
 
 ```sh
@@ -164,7 +160,6 @@ $ tfbuild tfimport
 ```
 
 ## Deployment Global Variable Reference
-***
 <br /> 
 
 ### Install Configuration file
@@ -251,7 +246,6 @@ Variable declarations are needed in coresponding deployment `variables.tf` file"
 
 
 ## Upgrade
-***
 <br /> 
 
 ```sh
@@ -259,7 +253,6 @@ $ pip install --upgrade tfbuild
 ```
 
 ## Uninstall
-***
 <br /> 
 
 ```sh
