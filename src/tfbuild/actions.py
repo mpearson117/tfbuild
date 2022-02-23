@@ -1,6 +1,6 @@
 #!/usr/bin/python3 -u
 
-from .baseline import Base
+from .core import Core
 from .workspace import Workspace
 from py_console import console
 import json
@@ -11,7 +11,7 @@ import sys
 import shutil, stat
 import subprocess
 
-class Action(Base):
+class Action(Core):
     """
     Inherits the Base Class and its attributes.
     Adding in 2 child atts, action, and target_environment.
@@ -19,7 +19,7 @@ class Action(Base):
     def __init__(self, action, target_environment):
         self.action = action
         self.target_environment = target_environment
-        Base.__init__(self, action, target_environment)
+        Core.__init__(self, action, target_environment)
 
     def __str__(self):
         return ' '.join((self.repo_name, self.location))
@@ -293,7 +293,7 @@ class Action(Base):
         console.success("  Common Shell File  = {common_shell_file}".format(**serialized), showTime=False)
         console.success("  Common Env File    = {common_env_file}".format(**serialized), showTime=False)
         console.success("  Local Env File     = {local_env_file}".format(**serialized), showTime=False)
-        console.success("  Site (Target Env.) = {target_environment}".format(**serialized), showTime=False)
+        console.success("  Site (Target Env.) = {site}".format(**serialized), showTime=False)
         console.success("  Command            = {action}".format(**serialized), showTime=False)
         console.success("  DR                 = {dr}".format(**serialized), showTime=False)
         console.success("  Prefix             = {prefix}".format(**serialized), showTime=False)

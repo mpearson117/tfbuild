@@ -23,17 +23,23 @@ Currently tfbuild supports the following Operating Systems:
 
 1. Python > 3.8 required (3.10 and higher on MacOS M1)
 
-2. Install TFBuild from URL:
+2. Install with pip (coming soon):
+
+```sh
+pip install tfbuild
+```
+
+3. Install TFBuild from wheel package published to custom pypi repo URL:
 
   ```sh
   $ pip install --extra-index-url https://<repo_url>/pypi-repo/simple tfbuild
   ```
 
-3. Install TFBuild from source repo:
+4. Install TFBuild from source repo:
 
 ```sh
 clone <repo_url>.git
-cd <local_repo_folder>/src
+cd <local_repo_folder>
 pip install -e .
 ```
 
@@ -113,9 +119,14 @@ Example:
 ## Usage
 <br /> 
 
+App name is `tfbuild` or `tfb`
+
 ```sh
 tfbuild <command>
 tfbuild <command>-<site>
+
+tfb <command>
+tfb <command>-<site>
 ```
 
 Commands, execute specific Terraform task:

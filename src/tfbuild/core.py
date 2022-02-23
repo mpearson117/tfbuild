@@ -3,14 +3,15 @@
 from git import Repo
 from py_console import console
 import confuse
-import hcl2
+import hcl
 import os
 import sys
 
-class Base():
+class Core():
     def __init__(self, action, target_environment=None):
         self.get_platform()
         self.app_name = os.path.basename(sys.argv[0])
+        self.app_config = os.path.basename(os.path.dirname(__file__))
         self.action = action
         self.build_id = os.getenv('BUILD_ID')
         self.target_environment = target_environment
@@ -42,7 +43,7 @@ class Base():
             self.repo_root = repo_root
 
     def load_configs(self):
-        config = confuse.LazyConfig(self.app_name, __name__)
+        config = confuse.LazyConfig(self.app_config, __name__)
         #config._add_default_source()
         #config_file = os.path.join(self.location, 'config_default.yaml')
         #config.set_file(config_file)
@@ -94,7 +95,7 @@ class Base():
 
         try:    
             with open(self.common_shell_file, 'r') as fp:
-                obj = hcl2.load(fp)
+                obj = hcl.load(fp)
                 self.china_deployment = obj.get('china_deployment', '')
                 self.dr = obj.get('dr', '')
                 self.global_resource = obj.get('global_resource', '')
@@ -151,7 +152,7 @@ class Base():
                 sys.exit(2)
 
         for env_file in self.var_file_args_list:
-            self.var_file_args += ' -var-file ' + env_file
+            self.var_file_args += ' -var-file=' + env_file
 
     def get_backend_configuration(self):
         """
@@ -160,6 +161,7 @@ class Base():
         """
 
         if self.target_environment:
+            self.site = self.target_environment
             if self.mode == "true":
                 self.prefix = "{}-{}-{}".format(self.project, self.target_environment, self.mode)
                 self.module = "{}-{}".format(self.resource, self.mode)
@@ -167,6 +169,7 @@ class Base():
                 self.prefix = "{}-{}".format(self.project, self.target_environment)
                 self.module = self.resource
         else:
+            self.site = ''
             if self.mode == "true":
                 self.prefix = "{}-{}".format(self.project, self.mode)
                 self.module = "{}-{}".format(self.resource, self.mode)
@@ -241,7 +244,7 @@ class Base():
             **{"TF_VAR_account": self.account},
             **{"TF_VAR_mode": self.mode},
             **{"TF_VAR_env": self.environment},
-            **{"TF_VAR_site": self.target_environment},
+            **{"TF_VAR_site": self.site},
             **{"TF_VAR_azrsa": self.bucket},
             **{"TF_VAR_bucket": self.bucket},
             **{"TF_VAR_prefix": self.prefix},
