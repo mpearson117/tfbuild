@@ -7,7 +7,7 @@ with open("README.md", "r") as readme_fd:
 setup(
     name="tfbuild",
     setup_requires=['setuptools-git-versioning'],
-    version_config={
+    setuptools_git_versioning={
         "template": "{tag}",
         "dev_template": "{tag}",
         "dirty_template": "{tag}",
