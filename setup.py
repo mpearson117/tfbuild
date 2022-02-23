@@ -1,16 +1,17 @@
 import os
 from setuptools import setup
 
-#with open("VERSION", "r") as version_fd:
-#    VERSION = version_fd.read().strip()
-
 with open("README.md", "r") as readme_fd:
     long_description = readme_fd.read()
 
-
 setup(
     name="tfbuild",
-    version="1.0.0",
+    setup_requires=['setuptools-git-versioning'],
+    version_config={
+        "template": "{tag}",
+        "dev_template": "{tag}",
+        "dirty_template": "{tag}",
+        },
     author="Michael Pearson",
     description="TFBuild is a command line tool for Terraform ",
     url="https://github.com/mpearson117/tfbuild",
