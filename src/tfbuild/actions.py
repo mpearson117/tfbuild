@@ -353,14 +353,10 @@ class Action(Core):
         Get the version of Terraform used.
         """
         try:
-            show_cmd = subprocess.Popen(['terraform', 'version'],stdin=None,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+            show_cmd = subprocess.Popen(['terraform', 'version', '-json'],stdin=None,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
             (stdout, stderr) = show_cmd.communicate()
-            lines = stdout.strip().decode().splitlines(True)
-            for line in lines:
-                if "Terraform" in line:
-                    items = line.split(" v")
-                    if len(items) > 1:
-                        terraform_version = items[1]
+            output = json.loads(stdout)
+            terraform_version = output['terraform_version']
             console.success("  Terraform version: " + terraform_version, showTime=False)
         except:
             console.error("  Terraform is not installed", showTime=False)
