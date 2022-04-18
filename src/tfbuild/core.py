@@ -9,9 +9,9 @@ import sys
 
 class Core():
     def __init__(self, action, target_environment=None):
-        self.get_platform()
         self.app_name = os.path.basename(sys.argv[0])
         self.app_config = os.path.basename(os.path.dirname(__file__))
+        self.get_platform()
         self.action = action
         self.build_id = os.getenv('BUILD_ID')
         self.target_environment = target_environment
@@ -20,8 +20,13 @@ class Core():
         self.repo_name = str(os.path.splitext(os.path.basename(self.repo_url))[0])
         self.branch_name = str(Repo(self.repo_root).active_branch)
         self.clouds_list = ['aws', 'azr', 'vmw', 'gcp']
-        self.bucket_prefix = self.load_configs()['bucket_prefix'].get(confuse.Optional(str, default='inf.tfstate'))
-        self.tf_cloud_org1 = self.load_configs()['tf_cloud_org'].get(confuse.Optional(str, default=None))
+        self.options_dict = {
+            "bucket_prefix": "inf.tfstate", 
+            "tf_cloud_org": None
+            }
+        self.bucket_prefix = self.set_config_var('bucket_prefix')
+        self.tf_cloud_org1 =  self.set_config_var('tf_cloud_org')
+        self.user_config_path = self.load_configs()[1]
         self.cloud = self.repo_name.split("-")[0]
         self.resource = os.path.relpath(self.location, self.repo_root).replace('\\', '/')
         self.config_files = self.load_configs()
@@ -34,7 +39,12 @@ class Core():
         self.export_environment()
 
     def get_platform(self):
-        repo_root = Repo(search_parent_directories=True).git.rev_parse("--show-toplevel")
+        try:
+            repo_root = Repo(search_parent_directories=True).git.rev_parse("--show-toplevel")
+        except:
+            console.error("  You are not executing " + self.app_config.upper() + " from a git repository !\n  Please ensure execution from a resurce directory inside a git repository !\n", showTime=False)
+            sys.exit(2)
+
         if sys.platform.startswith("win"):
             self.platform = "windows"
             self.repo_root = repo_root.replace('/', '\\')
@@ -44,12 +54,18 @@ class Core():
 
     def load_configs(self):
         config = confuse.LazyConfig(self.app_config, __name__)
-        #config._add_default_source()
-        #config_file = os.path.join(self.location, 'config_default.yaml')
-        #config.set_file(config_file)
-        if os.path.isfile(config.user_config_path()):
-            config.set_file(config.user_config_path(), base_for_paths=True)
-        return config
+        user_config_path = config.user_config_path()
+        if os.path.isfile(user_config_path):
+            config.set_file(user_config_path, base_for_paths=True)
+        return config, user_config_path
+
+    def set_config_var(self, var):
+        if os.environ.get(var.upper()) is not None:
+            env_var = os.environ[var.upper()]
+        else:
+            env_var = self.load_configs()[0][var].get(confuse.Optional(str, default=self.options_dict[var]))
+        return env_var
+
 
     def get_default_variables(self):
         """
@@ -60,7 +76,7 @@ class Core():
             self.account = self.branch_name.split("-")[0]
             self.environment = self.branch_name.split("-")[1]
         else:
-            self.project = self.repo_name.split("-")[1]
+            self.project = self.repo_name.split("-")[0]
             self.account = 'none'
             self.environment = self.branch_name
 

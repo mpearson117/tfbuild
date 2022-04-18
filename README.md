@@ -23,7 +23,7 @@ Currently tfbuild supports the following Operating Systems:
 
 1. Python > 3.8 required (3.10 and higher on MacOS M1)
 
-2. Install with pip (coming soon):
+2. Install with pip:
 
 ```sh
 pip install tfbuild
@@ -53,6 +53,8 @@ tfbuild assumes that the deployment is executed from a git repository with the f
 
 Repository Naming Standard: `<Cloud_ID>-<Project_Acronym>`
 Branch Naming Standard: `<Account_ID>-<Environment>`
+
+Cloud_ID: `aws, azr, gcp, vmw`
  
 Example:
 -	Repository: `aws-k8s`
@@ -133,6 +135,7 @@ Commands, execute specific Terraform task:
 | Command | Description |
 |---------|-------------|
 | `apply` | Apply Terraform configuration |
+| `config` | Configure TFBuild deployment global variables |
 | `destroy` | Destroy Terraform Configuration |
 | `destroyforce` | Destroy Terraform Configuration with no prompt |
 | `help` | Display the help menu that shows available commands |
@@ -168,6 +171,7 @@ $ tfbuild destroy
 $ tfbuild taint
 $ tfbuild test
 $ tfbuild tfimport
+$ tfbuild config --bucket_prefix=test_bucket --tf_cloud_org=test_org
 ```
 
 ## Deployment Global Variable Reference
@@ -176,10 +180,12 @@ $ tfbuild tfimport
 ### Install Configuration file
 <br /> 
 
-| Variable | Description | Usage Target | Default | Required |
-|----------|-------------|:------------:|:-------:|:--------:|
-| bucket_prefix | Ability to override `Bucket_Prefix` | Cloud Backend | `inf.tfstate` | no |
-| tf_cloud_org | Ability to set a global TFC org. Takes priority over Git variables. | TFC Backend (VMW) | - | yes |
+| Config Variable | Env. Variable | Description | Usage Target | Default | Required |
+|-----------------|---------------|-------------|:------------:|:-------:|:--------:|
+| bucket_prefix | BUCKET_PREFIX | Override `Bucket_Prefix` | Cloud Backend | `inf.tfstate` | no |
+| tf_cloud_org | TF_CLOUD_ORG | Set a global TFC org. Takes priority over Git variables. | TFC Backend (VMW) | - | yes |
+|  | TF_TOKEN | TFC Authentication Token | TFC Backend (VMW) | - | yes |
+
 <br />
 
 Introducing the ability to set global wrapper variables that preceede Git global variables for any deployment.
@@ -226,7 +232,7 @@ Example: `tfbuild <command>-<site>`
 | *site | In region secondary site deployment designation | All Backends | - | no |
 | tf_cli_args | Custom TF variables to be passed to the deployment | TER | - | no |
 | tf_cloud_backend | TFC Backend. Can be activated with `tf_cloud_backend = "true"` | TFC Backend (VMW) | - | yes |
-| tf_cloud_org | Terraform Cloud Organization | TFC Backend (VMW) | - | yes |
+| tf_cloud_org | Terraform Cloud Organization | TFC Backend (VMW) | - | no |
 <br />
 
 

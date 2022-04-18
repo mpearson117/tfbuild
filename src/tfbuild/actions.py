@@ -43,6 +43,34 @@ class Action(Core):
         console.success("  Running Terraform Apply", showTime=False)
         self.command("terraform apply -input=false -auto-approve{}".format(self.var_file_args).split())
 
+    def config(self):
+        import getopt, yaml
+        console.success(" Config Setup:", showTime=False)
+        options_list = [item + '=' for item in list(self.options_dict.keys())]
+        config_file_name = self.user_config_path
+
+        try:
+            opts, args = getopt.getopt(sys.argv[2:], "", options_list)
+        except getopt.GetoptError as errorname:
+            print('Error: ' + str(errorname))
+            sys.exit(2)
+
+        for o, a in opts:
+            option = o.replace('-', '')
+
+            if os.path.exists(config_file_name):
+                with open(config_file_name) as f:
+                    doc = yaml.safe_load(f)
+                doc[option] = a
+                with open(config_file_name, 'w') as f:
+                    yaml.safe_dump(doc, f, default_flow_style=False)
+            else:
+                dict = {option: a}
+                with open(config_file_name, 'w') as f:
+                    yaml.safe_dump(dict, f, default_flow_style=False)
+
+            console.success(" - " + option + ": " + a, showTime=False)
+
     def destroy(self):
         """
         Force Destroy on Terraform, based on site, and resources.
@@ -71,9 +99,11 @@ class Action(Core):
         Example:
            {0} plan
            {0} plan-dr
+           {0} config --bucket_prefix=test_bucket --tf_cloud_org=test_org
 
         Commands:
-           apply          Apply Terraform configuration
+           apply          Apply Terraform Configuration
+           config         Configure {0} deployment global variables
            destroy        Destroy Terraform Configuration
            destroyforce   Destroy Terraform Configuration with no prompt
            help           Display the help menu that shows available commands
@@ -144,7 +174,7 @@ class Action(Core):
                     ]
                 )
         elif self.tf_cloud_backend == "true":
-            console.success("  Initializing Terraform Clound Backend", showTime=False)
+            console.success("  Initializing Terraform Cloud Backend", showTime=False)
             Workspace(self.bucket_key, self.platform, self.version_tf(), self.tf_cloud_backend_org)
             if not os.path.exists('.terraform'):
                 console.success("  Creating .terraform directory and backend configuration", showTime=False)
@@ -277,7 +307,7 @@ class Action(Core):
 
         serialized = json.loads(jsonpickle.encode(self, max_depth=2))
 
-        console.warn("  Current Deployment Details", showTime=False)
+        console.warn("\n  Current Deployment Details", showTime=False)
         console.warn("  ==========================", showTime=False)
         console.success("  Platform           = {platform}".format(**serialized), showTime=False)
         console.success("  AppDir             = {location}".format(**serialized), showTime=False)
@@ -304,8 +334,8 @@ class Action(Core):
         console.success("  Bucket             = {bucket}".format(**serialized), showTime=False)
         console.success("  Key                = {bucket_key}".format(**serialized), showTime=False)
         console.success("  China Deployment   = {china_deployment}".format(**serialized), showTime=False)
-        print("")
-        console.warn("  Terraform Variables", showTime=False)
+
+        console.warn("\n  Terraform Variables", showTime=False)
         console.warn("  ===================", showTime=False)
         console.success("  TF_VAR_mode             = {mode}".format(**serialized), showTime=False)
         console.success("  TF_VAR_project          = {project}".format(**serialized), showTime=False)
@@ -316,6 +346,11 @@ class Action(Core):
         console.success("  TF_VAR_prefix           = {prefix}".format(**serialized), showTime=False)
         console.success("  TF_CLI_ARGS             = {tf_cli_args}".format(**serialized), showTime=False)
         console.success("  TF_VAR_china_deployment = {china_deployment}".format(**serialized), showTime=False)
+
+        console.warn("\n  Global Config Variables", showTime=False)
+        console.warn("  =======================", showTime=False)
+        console.success("  bucket_prefix           = {bucket_prefix}".format(**serialized), showTime=False)
+        console.success("  tf_cloud_org            = {tf_cloud_backend_org}".format(**serialized), showTime=False)
 
     def tfimport(self):
         self.init()
@@ -330,8 +365,8 @@ class Action(Core):
         """
         Get application version from VERSION with cli call.
         """
-        version = pkg_resources.require(self.app_name)[0].version
-        console.success("  " + self.app_name.upper() + " version: " + version, showTime=False)
+        version = pkg_resources.require(self.app_config)[0].version
+        console.success("  " + self.app_config.upper() + " version: " + version, showTime=False)
 
     def version_git(self):
         """
