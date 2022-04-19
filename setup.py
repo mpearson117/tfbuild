@@ -27,7 +27,8 @@ setup(
         "jsonpickle", 
         "py_console",
         "PyYAML", 
-        "pyhcl", 
+        "pyhcl",
+        "requests", 
         "schematics>=2.0,<3.0", 
         "six>=1.11,<2"
         ],
