@@ -193,6 +193,8 @@ class Core():
                 self.prefix = self.project
                 self.module = self.resource
 
+        self.tf_cloud_backend_org = None
+        
         if self.cloud == "aws":
             if self.global_resource == "True" or self.resource.__contains__("53") == True:
                 self.bucket_key = "{prefix}/{module}/terraform.tfstate".format(
