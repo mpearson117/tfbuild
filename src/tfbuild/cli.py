@@ -16,12 +16,12 @@ def main():
     """
 
     get_action_methods()
-    if "-" in sys.argv[1]:
-        arg = sys.argv[1].split('-')[0]
-        target_environment = sys.argv[1].split('-')[1]
-    elif len(sys.argv) < 2 or sys.argv[1] not in get_action_methods():
+    if len(sys.argv) == 1 or not filter(sys.argv[1].startswith, get_action_methods()):
         arg = "help"
         target_environment = None
+    elif "-" in sys.argv[1]:
+        arg = sys.argv[1].split('-')[0]
+        target_environment = sys.argv[1].split('-')[1]
     else:
         arg = sys.argv[1]
         target_environment = None
