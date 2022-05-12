@@ -67,7 +67,7 @@ Terraform Configurations `*.tf` are templatized, and should not change between b
 Managed SDLC practices are advised to merge changes from lower environments and up.  
 Terraform variables should be introduced separately for each environment and site at the lowest environmental banch, and PRs used for moving the changes to the required branch.  
 
-![Repo-Architecture](./images/repo_architecture.svg) 
+![Repo-Architecture](https://github.com/mpearson117/tfbuild/blob/main/images/repo_architecture.svg?raw=True)
 
 ### Terraform State - AWS S3 Bucket Name
 <br /> 
@@ -174,19 +174,30 @@ $ tfbuild tfimport
 $ tfbuild config --bucket_prefix=test_bucket --tf_cloud_org=test_org
 ```
 
+Commands directly coresponding to Terraform actions, such as `init`, `plan`, `apply`, `destroy`, `validate`, can take the coresponding terraform options.
+```sh
+# Example:
+
+$ tfbuild plan -json
+$ tfbuild apply -compact-warnings -no-color
+```
+
 ## Deployment Global Variable Reference
 <br /> 
 
 ### Install Configuration file
 <br /> 
 
-| Config Variable | Env. Variable | Description | Usage Target | Default | Required |
-|-----------------|---------------|-------------|:------------:|:-------:|:--------:|
-| bucket_prefix | BUCKET_PREFIX | Override `Bucket_Prefix` | Cloud Backend | `inf.tfstate` | no |
-| tf_cloud_org | TF_CLOUD_ORG | Set a global TFC org. Takes priority over Git variables. | TFC Backend (VMW) | - | yes |
-|  | TF_TOKEN | TFC Authentication Token | TFC Backend (VMW) | - | yes |
+| Env. Variable | Config Variable | Description | Usage Target | Default | Required |
+|---------------|-----------------|-------------|:------------:|:-------:|:--------:|
+| BUCKET_PREFIX | bucket_prefix | Override `Bucket_Prefix` | Cloud Backend | `inf.tfstate` | no |
+| TF_CLOUD_ORG | tf_cloud_org | Set a global TFC org. Takes priority over Git variables. | TFC Backend (VMW) | - | yes |
+| TF_TOKEN |  | TFC Authentication Token | TFC Backend (VMW) | - | yes |
 
 <br />
+
+Terraform Cloud credentials are sourced from the [Terraform CLI Config File](https://www.terraform.io/cli/config/config-file#credentials).  
+`TF_TOKEN` updates the credentials in the `Terraform CLI Config File` or creates a new file if one does not exist in the Terraform predefined locations. 
 
 Introducing the ability to set global wrapper variables that preceede Git global variables for any deployment.
 

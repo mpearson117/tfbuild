@@ -2,16 +2,26 @@
 
 import sys
 from .actions import Action
+from py_console import console
 
+def get_action_methods():
+    method_list = [method for method in dir(Action) if method.startswith('__') is False]
+    return method_list
+    
 def main():
     """
     Everything we want to wrap before we release the command
     and its child argumentes to terraform cli. If the first sys
     argument is not mapped, we release the call to terraform.
     """
+
+    get_action_methods()
     if "-" in sys.argv[1]:
         arg = sys.argv[1].split('-')[0]
         target_environment = sys.argv[1].split('-')[1]
+    elif len(sys.argv) < 2 or sys.argv[1] not in get_action_methods():
+        arg = "help"
+        target_environment = None
     else:
         arg = sys.argv[1]
         target_environment = None
@@ -21,7 +31,7 @@ def main():
         func = getattr(current_action, arg)
         func()
     except KeyboardInterrupt:
-        print("\n Execution terminated")
+        console.success("\n Execution terminated", showTime=False)
         sys.exit(130)
     except(ValueError):
         pass   

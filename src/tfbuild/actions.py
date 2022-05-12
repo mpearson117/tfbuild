@@ -36,16 +36,19 @@ class Action(Core):
     def apply(self):
         self.init()
         console.success("  Running Terraform Apply", showTime=False)
-        self.command("terraform apply{}".format(self.var_file_args).split())
+        #self.command("terraform apply{}".format(self.var_file_args).split())
+        apply = ['terraform', 'apply'] + self.var_file_args + sys.argv[2:]
+        self.command(apply) 
 
     def applynoprompt(self):
         self.reinit()
         console.success("  Running Terraform Apply", showTime=False)
-        self.command("terraform apply -input=false -auto-approve{}".format(self.var_file_args).split())
+        #self.command("terraform apply -input=false -auto-approve{}".format(self.var_file_args).split())
+        applynoprompt = ['terraform', 'apply', '-input=false', '-auto-approve'] + self.var_file_args + sys.argv[2:]
+        self.command(applynoprompt) 
 
     def config(self):
         import getopt, yaml
-        console.success(" Config Setup:", showTime=False)
         options_list = [item + '=' for item in list(self.options_dict.keys())]
         config_file_name = self.user_config_path
 
@@ -69,7 +72,13 @@ class Action(Core):
                 with open(config_file_name, 'w') as f:
                     yaml.safe_dump(dict, f, default_flow_style=False)
 
-            console.success(" - " + option + ": " + a, showTime=False)
+        console.success("\n Config Path:\n   " + config_file_name, showTime=False)
+        console.success(" Current Config:", showTime=False)
+        config = open(config_file_name, "r")
+        config_content = config.read().splitlines()
+        for line in config_content:
+            console.success("  " + line, showTime=False)
+
 
     def destroy(self):
         """
@@ -77,7 +86,9 @@ class Action(Core):
         """
         self.init()
         console.success("  Running Terraform Destroy", showTime=False)
-        self.command("terraform destroy{}".format(self.var_file_args).split())
+        #self.command("terraform destroy{}".format(self.var_file_args).split())
+        destroy = ['terraform', 'destroy'] + self.var_file_args + sys.argv[2:]
+        self.command(destroy) 
 
     def destroyforce(self):
         """
@@ -85,7 +96,9 @@ class Action(Core):
         """
         self.reinit()
         console.success("  Running Terraform Destroy Force", showTime=False)
-        self.command("terraform destroy -force{}".format(self.var_file_args).split())
+        #self.command("terraform destroy -force{}".format(self.var_file_args).split())
+        destroyforce = ['terraform', 'destroy', '-force'] + self.var_file_args + sys.argv[2:]
+        self.command(destroyforce) 
 
     def help(self):
         """
@@ -137,15 +150,22 @@ class Action(Core):
     def plan(self):
         self.init()
         console.success("  Creating a Terraform Plan", showTime=False)
-        self.command("terraform plan{}".format(self.var_file_args).split())
+        #self.command("terraform plan{}".format(self.var_file_args).split())
+        plan = ['terraform', 'plan'] + self.var_file_args + sys.argv[2:]
+        self.command(plan) 
 
     def plandestroy(self):
         self.init()
         console.success("  Creating a Destroy Plan", showTime=False)
-        self.command("terraform plan -input=false -refresh=true -destroy{}".format(self.var_file_args).split())
+        #self.command("terraform plan -input=false -refresh=true -destroy{}".format(self.var_file_args).split())
+        plandestroy = ['terraform', 'plan', '-input=false', '-refresh=true', '-destroy'] + self.var_file_args + sys.argv[2:]
+        self.command(plandestroy) 
 
     def refresh(self):
-        self.command("terraform refresh{}".format(self.var_file_args).split())
+        console.success("  Running Terraform Refresh", showTime=False)
+        #self.command("terraform refresh{}".format(self.var_file_args).split())
+        refresh = ['terraform', 'refresh'] + self.var_file_args + sys.argv[2:]
+        self.command(refresh) 
 
     def reinit(self):
         """
@@ -200,7 +220,9 @@ class Action(Core):
     def replan(self):
         self.reinit()
         console.success("  Running Terraform Plan", showTime=False)
-        self.command("terraform plan{}".format(self.var_file_args).split())
+        #self.command("terraform plan{}".format(self.var_file_args).split())
+        plan = ['terraform', 'plan'] + self.var_file_args + sys.argv[2:]
+        self.command(plan) 
 
     def taintresources(self):
         """
@@ -355,11 +377,21 @@ class Action(Core):
     def tfimport(self):
         self.init()
         console.success("  Running Terraform Import", showTime=False)
-        self.command("terraform import{}".format(self.var_file_args).split())
+        #self.command("terraform import{}".format(self.var_file_args).split())
+        tfimport = ['terraform', 'import'] + self.var_file_args + sys.argv[2:]
+        self.command(tfimport) 
 
     def update(self):
         console.success("  Updating Modules", showTime=False)
-        self.command("terraform get -update=true{}".format(self.var_file_args).split())
+        #self.command("terraform get -update=true{}".format(self.var_file_args).split())
+        update = ['terraform', 'get', '-update=true'] + self.var_file_args + sys.argv[2:]
+        self.command(update) 
+
+    def validate(self):
+        console.success("  Running Terraform Validation", showTime=False)
+        self.command(['terraform', 'init', '-backend=false']) 
+        validate = ['terraform', 'validate'] + sys.argv[2:]
+        self.command(validate) 
 
     def version(self):
         """

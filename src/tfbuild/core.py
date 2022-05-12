@@ -11,32 +11,33 @@ class Core():
     def __init__(self, action, target_environment=None):
         self.app_name = os.path.basename(sys.argv[0])
         self.app_config = os.path.basename(os.path.dirname(__file__))
-        self.get_platform()
         self.action = action
-        self.build_id = os.getenv('BUILD_ID')
-        self.target_environment = target_environment
-        self.location = os.path.realpath(os.getcwd())
-        self.repo_url = Repo(self.repo_root).remotes[0].config_reader.get("url")
-        self.repo_name = str(os.path.splitext(os.path.basename(self.repo_url))[0])
-        self.branch_name = str(Repo(self.repo_root).active_branch)
-        self.clouds_list = ['aws', 'azr', 'vmw', 'gcp']
-        self.options_dict = {
-            "bucket_prefix": "inf.tfstate", 
-            "tf_cloud_org": None
-            }
-        self.bucket_prefix = self.set_config_var('bucket_prefix')
-        self.tf_cloud_org1 =  self.set_config_var('tf_cloud_org')
-        self.user_config_path = self.load_configs()[1]
-        self.cloud = self.repo_name.split("-")[0]
-        self.resource = os.path.relpath(self.location, self.repo_root).replace('\\', '/')
-        self.config_files = self.load_configs()
-        self.get_default_variables()
-        self.secret_path = os.path.join("{}".format(self.repo_root), "secret_{}_backend.tfvars".format(self.cloud))
-        self.get_env_files()
-        self.get_deployment_attributes()
-        self.sanity_check()
-        self.get_backend_configuration()
-        self.export_environment()
+        if self.action != "help":
+            self.get_platform()
+            self.build_id = os.getenv('BUILD_ID')
+            self.target_environment = target_environment
+            self.location = os.path.realpath(os.getcwd())
+            self.repo_url = Repo(self.repo_root).remotes[0].config_reader.get("url")
+            self.repo_name = str(os.path.splitext(os.path.basename(self.repo_url))[0])
+            self.branch_name = str(Repo(self.repo_root).active_branch)
+            self.clouds_list = ['aws', 'azr', 'vmw', 'gcp']
+            self.options_dict = {
+                "bucket_prefix": "inf.tfstate", 
+                "tf_cloud_org": None
+                }
+            self.bucket_prefix = self.set_config_var('bucket_prefix')
+            self.tf_cloud_org1 =  self.set_config_var('tf_cloud_org')
+            self.user_config_path = self.load_configs()[1]
+            self.cloud = self.repo_name.split("-")[0]
+            self.resource = os.path.relpath(self.location, self.repo_root).replace('\\', '/')
+            self.config_files = self.load_configs()
+            self.get_default_variables()
+            self.secret_path = os.path.join("{}".format(self.repo_root), "secret_{}_backend.tfvars".format(self.cloud))
+            self.get_env_files()
+            self.get_deployment_attributes()
+            self.sanity_check()
+            self.get_backend_configuration()
+            self.export_environment()
 
     def get_platform(self):
         try:
@@ -167,8 +168,11 @@ class Core():
                 console.error("  Specify 'region' in the file: \n          " + self.common_shell_file, showTime=False)
                 sys.exit(2)
 
-        for env_file in self.var_file_args_list:
-            self.var_file_args += ' -var-file=' + env_file
+        #for env_file in self.var_file_args_list:
+        #    self.var_file_args += ' -var-file=' + env_file
+        
+        arg_prefix = '-var-file='
+        self.var_file_args = [arg_prefix + item for item in self.var_file_args_list]
 
     def get_backend_configuration(self):
         """

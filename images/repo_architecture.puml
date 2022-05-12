@@ -12,8 +12,8 @@ salt
 ++
 ++ <color:blue><resource>                                | <color:blue>Resource to be deployed.
 +++ <color:teal>environments                             | <color:teal>Resource variables (Overrides Global Variables).
-++++ <color:teal>env_<environment>_common.tfvars         | <color:teal>Resource Env. specific TF vars.
-++++ <color:teal>env_<environment>_<site>_common.tfvars  | <color:teal>Resource Env. and site specific TF vars.
+++++ <color:teal>env_<environment>.tfvars                | <color:teal>Resource Env. specific TF vars.
+++++ <color:teal>env_<environment>_<site>.tfvars         | <color:teal>Resource Env. and site specific TF vars.
 +++ <color:teal>main.tf                                  | <color:teal>Resource TF script
 +++ <color:teal>variables.tf                             | <color:teal>Resource TF variables
 +++ <color:teal>output.tf                                | <color:teal>Resource TF outputs
@@ -21,8 +21,8 @@ salt
 ++ <color:blue><resource_groups>                         | <color:blue>Group of resources to be deployed.
 +++ <color:blue><sub_resource>                           | <color:blue>Sub-Resource to be deployed.
 ++++ <color:teal>environments                            | <color:teal>Sub-Resource variables (Overrides Global Variables).
-+++++ <color:teal>env_<environment>_common.tfvars        | <color:teal>Sub-Resource Env. specific TF vars.
-+++++ <color:teal>env_<environment>_<site>_common.tfvars | <color:teal>Sub-Resource Env. and site specific TF vars.
++++++ <color:teal>env_<environment>.tfvars               | <color:teal>Sub-Resource Env. specific TF vars.
++++++ <color:teal>env_<environment>_<site>.tfvars        | <color:teal>Sub-Resource Env. and site specific TF vars.
 ++++ <color:teal>main.tf                                 | <color:teal>Sub-Resource TF script
 ++++ <color:teal>variables.tf                            | <color:teal>Sub-Resource TF variables
 ++++ <color:teal>output.tf                               | <color:teal>Sub-Resource TF outputs
