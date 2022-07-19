@@ -116,6 +116,7 @@ class Core():
                 self.china_deployment = obj.get('china_deployment', '')
                 self.dr = obj.get('dr', '')
                 self.global_resource = obj.get('global_resource', '')
+                self.target_environment_type = obj.get('target_environment_type', 'region')
                 self.mode = obj.get('mode', '')
                 self.region = obj.get('region', '')
                 self.tf_cloud_backend = obj.get('tf_cloud_backend', '')               
@@ -167,10 +168,11 @@ class Core():
             if self.cloud in ['aws', 'azr']:
                 console.error("  Specify 'region' in the file: \n          " + self.common_shell_file, showTime=False)
                 sys.exit(2)
-
-        #for env_file in self.var_file_args_list:
-        #    self.var_file_args += ' -var-file=' + env_file
         
+        if self.target_environment_type not in ["region", "site"]:
+            console.error("  Specify a valid Target Environment Type (region/site) in the file: \n  " + self.common_shell_file, showTime=False)
+            sys.exit(2)
+
         arg_prefix = '-var-file='
         self.var_file_args = [arg_prefix + item for item in self.var_file_args_list]
 
@@ -180,9 +182,9 @@ class Core():
         return bucket, backend_region for deployment.
         """
 
-        if self.target_environment:
+        if self.target_environment and self.target_environment_type != 'region':
             self.site = self.target_environment
-            if self.mode == "true":
+            if self.mode != '':
                 self.prefix = "{}-{}-{}".format(self.project, self.target_environment, self.mode)
                 self.module = "{}-{}".format(self.resource, self.mode)
             else:
@@ -190,7 +192,7 @@ class Core():
                 self.module = self.resource
         else:
             self.site = ''
-            if self.mode == "true":
+            if self.mode != '':
                 self.prefix = "{}-{}".format(self.project, self.mode)
                 self.module = "{}-{}".format(self.resource, self.mode)
             else:

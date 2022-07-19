@@ -244,6 +244,7 @@ Example: `tfbuild <command>-<site>`
 | tf_cli_args | Custom TF variables to be passed to the deployment | TER | - | no |
 | tf_cloud_backend | TFC Backend. Can be activated with `tf_cloud_backend = "true"` | TFC Backend (VMW) | - | yes |
 | tf_cloud_org | Terraform Cloud Organization | TFC Backend (VMW) | - | no |
+| target_environment_type | Switch between multi-region and in region multi-site deployment types. Defaults to multi-region. | All Backends | `region` | no |
 <br />
 
 
