@@ -36,14 +36,12 @@ class Action(Core):
     def apply(self):
         self.init()
         console.success("  Running Terraform Apply", showTime=False)
-        #self.command("terraform apply{}".format(self.var_file_args).split())
         apply = ['terraform', 'apply'] + self.var_file_args + sys.argv[2:]
         self.command(apply) 
 
     def applynoprompt(self):
         self.reinit()
         console.success("  Running Terraform Apply", showTime=False)
-        #self.command("terraform apply -input=false -auto-approve{}".format(self.var_file_args).split())
         applynoprompt = ['terraform', 'apply', '-input=false', '-auto-approve'] + self.var_file_args + sys.argv[2:]
         self.command(applynoprompt) 
 
@@ -86,7 +84,6 @@ class Action(Core):
         """
         self.init()
         console.success("  Running Terraform Destroy", showTime=False)
-        #self.command("terraform destroy{}".format(self.var_file_args).split())
         destroy = ['terraform', 'destroy'] + self.var_file_args + sys.argv[2:]
         self.command(destroy) 
 
@@ -96,7 +93,6 @@ class Action(Core):
         """
         self.reinit()
         console.success("  Running Terraform Destroy Force", showTime=False)
-        #self.command("terraform destroy -force{}".format(self.var_file_args).split())
         destroyforce = ['terraform', 'destroy', '-force'] + self.var_file_args + sys.argv[2:]
         self.command(destroyforce) 
 
@@ -139,31 +135,33 @@ class Action(Core):
         and variables.
         """
         console.success("  Initializing Terraform", showTime=False)
-        if os.path.exists('.terraform'):
-            console.success("  Removing .terraform", showTime=False)
-            def del_rw(action, name, exc):
-                os.chmod(name, stat.S_IWRITE)
-                os.remove(name)
-            shutil.rmtree('.terraform', onerror=del_rw)
+        cleanup_list = ['.terraform.lock.hcl', '.terraform']
+        for item in cleanup_list:
+            if os.path.exists(item):
+                console.success("  Removing " + item, showTime=False)
+                def del_rw(action, name, exc):
+                    os.chmod(name, stat.S_IWRITE)
+                    os.remove(name)
+                if os.path.isfile(item):
+                    os.remove(item)
+                else:
+                    shutil.rmtree(item, onerror=del_rw)
         self.reinit()
 
     def plan(self):
         self.init()
         console.success("  Creating a Terraform Plan", showTime=False)
-        #self.command("terraform plan{}".format(self.var_file_args).split())
         plan = ['terraform', 'plan'] + self.var_file_args + sys.argv[2:]
         self.command(plan) 
 
     def plandestroy(self):
         self.init()
         console.success("  Creating a Destroy Plan", showTime=False)
-        #self.command("terraform plan -input=false -refresh=true -destroy{}".format(self.var_file_args).split())
         plandestroy = ['terraform', 'plan', '-input=false', '-refresh=true', '-destroy'] + self.var_file_args + sys.argv[2:]
         self.command(plandestroy) 
 
     def refresh(self):
         console.success("  Running Terraform Refresh", showTime=False)
-        #self.command("terraform refresh{}".format(self.var_file_args).split())
         refresh = ['terraform', 'refresh'] + self.var_file_args + sys.argv[2:]
         self.command(refresh) 
 
@@ -220,7 +218,6 @@ class Action(Core):
     def replan(self):
         self.reinit()
         console.success("  Running Terraform Plan", showTime=False)
-        #self.command("terraform plan{}".format(self.var_file_args).split())
         plan = ['terraform', 'plan'] + self.var_file_args + sys.argv[2:]
         self.command(plan) 
 
@@ -359,15 +356,18 @@ class Action(Core):
 
         console.warn("\n  Terraform Variables", showTime=False)
         console.warn("  ===================", showTime=False)
-        console.success("  TF_VAR_mode             = {mode}".format(**serialized), showTime=False)
-        console.success("  TF_VAR_project          = {project}".format(**serialized), showTime=False)
-        console.success("  TF_VAR_account          = {account}".format(**serialized), showTime=False)
-        console.success("  TF_VAR_env              = {environment}".format(**serialized), showTime=False)
-        console.success("  TF_VAR_azrsa            = {bucket}".format(**serialized), showTime=False)
-        console.success("  TF_VAR_bucket           = {bucket}".format(**serialized), showTime=False)
-        console.success("  TF_VAR_prefix           = {prefix}".format(**serialized), showTime=False)
-        console.success("  TF_CLI_ARGS             = {tf_cli_args}".format(**serialized), showTime=False)
-        console.success("  TF_VAR_china_deployment = {china_deployment}".format(**serialized), showTime=False)
+        console.success("  TF_VAR_mode              = {mode}".format(**serialized), showTime=False)
+        console.success("  TF_VAR_project           = {project}".format(**serialized), showTime=False)
+        console.success("  TF_VAR_prefix            = {prefix}".format(**serialized), showTime=False)
+        console.success("  TF_VAR_account           = {account}".format(**serialized), showTime=False)
+        console.success("  TF_VAR_env               = {environment}".format(**serialized), showTime=False)
+        console.success("  TF_VAR_site              = {site}".format(**serialized), showTime=False)
+        console.success("  TF_VAR_deployment_region = {region}".format(**serialized), showTime=False)
+        console.success("  TF_VAR_backend_region    = {backend_region}".format(**serialized), showTime=False)
+        console.success("  TF_VAR_bucket            = {bucket}".format(**serialized), showTime=False)
+        console.success("  TF_VAR_azrsa             = {bucket}".format(**serialized), showTime=False)
+        console.success("  TF_CLI_ARGS              = {tf_cli_args}".format(**serialized), showTime=False)
+        console.success("  TF_VAR_china_deployment  = {china_deployment}".format(**serialized), showTime=False)
 
         console.warn("\n  Global Config Variables", showTime=False)
         console.warn("  =======================", showTime=False)
@@ -377,13 +377,11 @@ class Action(Core):
     def tfimport(self):
         self.init()
         console.success("  Running Terraform Import", showTime=False)
-        #self.command("terraform import{}".format(self.var_file_args).split())
         tfimport = ['terraform', 'import'] + self.var_file_args + sys.argv[2:]
         self.command(tfimport) 
 
     def update(self):
         console.success("  Updating Modules", showTime=False)
-        #self.command("terraform get -update=true{}".format(self.var_file_args).split())
         update = ['terraform', 'get', '-update=true'] + self.var_file_args + sys.argv[2:]
         self.command(update) 
 
