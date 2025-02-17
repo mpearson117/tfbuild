@@ -28,9 +28,7 @@ setup(
         "py_console",
         "PyYAML", 
         "pyhcl",
-        "requests", 
-        "schematics>=2.0,<3.0", 
-        "six>=1.11,<2"
+        "requests" 
         ],
     extras_require={
         'dev:python_version > "3"': ["pytest>=5.0,<6",],

@@ -21,7 +21,7 @@ def main():
         target_environment = None
     elif "-" in sys.argv[1]:
         arg = sys.argv[1].split('-')[0]
-        target_environment = sys.argv[1].split('-')[1]
+        target_environment = sys.argv[1].split('-')[1].lower()
     else:
         arg = sys.argv[1]
         target_environment = None

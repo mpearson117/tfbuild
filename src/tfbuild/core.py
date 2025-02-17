@@ -17,10 +17,11 @@ class Core():
             self.build_id = os.getenv('BUILD_ID')
             self.target_environment = target_environment
             self.location = os.path.realpath(os.getcwd())
-            self.repo_url = Repo(self.repo_root).remotes[0].config_reader.get("url")
-            self.repo_name = str(os.path.splitext(os.path.basename(self.repo_url))[0])
-            self.branch_name = str(Repo(self.repo_root).active_branch)
+            self.repo_name = str(os.path.splitext(os.path.basename(self.repo_url))[0]).lower()
+            self.branch_name = str(Repo(self.repo_root).active_branch).lower()
             self.clouds_list = ['aws', 'azr', 'vmw', 'gcp']
+            self.global_resources = ["53", "global"]
+            self.get_default_variables()
             self.options_dict = {
                 "bucket_prefix": "inf.tfstate", 
                 "tf_cloud_org": None
@@ -28,15 +29,14 @@ class Core():
             self.bucket_prefix = self.set_config_var('bucket_prefix')
             self.tf_cloud_org1 =  self.set_config_var('tf_cloud_org')
             self.user_config_path = self.load_configs()[1]
-            self.cloud = self.repo_name.split("-")[0]
             self.resource = os.path.relpath(self.location, self.repo_root).replace('\\', '/')
             self.config_files = self.load_configs()
-            self.get_default_variables()
             self.secret_path = os.path.join("{}".format(self.repo_root), "secret_{}_backend.tfvars".format(self.cloud))
             self.get_env_files()
             self.get_deployment_attributes()
             self.sanity_check()
-            self.get_backend_configuration()
+            self.set_site_configuration()
+            self.set_backend_configuration(self.backend.lower())
             self.export_environment()
 
     def get_platform(self):
@@ -52,6 +52,12 @@ class Core():
         else:
             self.platform = "linux"
             self.repo_root = repo_root
+
+        try:
+            self.repo_url = Repo(self.repo_root).remotes[0].config_reader.get("url")
+        except IndexError:
+            console.error("  " + str(os.path.splitext(os.path.basename(self.repo_root))[0]).upper() + " is a local repository with no remotes. !\n", showTime=False)
+            sys.exit(2)
 
     def load_configs(self):
         config = confuse.LazyConfig(self.app_config, __name__)
@@ -70,16 +76,51 @@ class Core():
 
     def get_default_variables(self):
         """
-        Get Cloud Dependent Project, Account, Environment variables.
+        Get Repository Prefix, Cloud Dependent Project, Account, Environment variables.
         """
-        if self.cloud in self.clouds_list:
-            self.project = self.repo_name.split("-")[1]
-            self.account = self.branch_name.split("-")[0]
-            self.environment = self.branch_name.split("-")[1]
+
+        self.repo_name_parts = self.repo_name.split("-")
+
+        if len(self.repo_name_parts) > 2:
+            self.repo_prefix = "-".join(self.repo_name_parts[:-2])
         else:
-            self.project = self.repo_name.split("-")[0]
-            self.account = 'none'
-            self.environment = self.branch_name
+            self.repo_prefix = ""
+
+        if len(self.repo_name_parts) <= 1:
+            console.error(
+                "Error: Invalid repository name structure.\n"
+                "The repository name structure needs to be:\n"
+                "  [Repository Prefix]-[Hosting Platform]-[Project name]\n"
+                "  Note: Project Prefix is optional.\n"
+                "  Example:\n"
+                "    - myrepo-aws-myproject\n"
+                "    - aws-myproject\n"
+                "Default supported Hosting Platform values are:\n  " + ", ".join(self.clouds_list) + "\n",
+                showTime=False
+            )
+            sys.exit(2)
+        else:
+            self.cloud = self.repo_name_parts[-2]
+
+        if self.cloud in self.clouds_list:
+            self.project = self.repo_name_parts[-1]
+            self.account = self.branch_name.split("-")[0]
+            if len(self.branch_name.split("-")) == 2: 
+                self.environment = self.branch_name.split("-")[1]
+            else:
+                console.error("  Error: Invalid repository branch name structure.\n"
+                              "  For Cloud Hosting Platforms, he branch name structure needs to be:\n"
+                              "  [Account Number]-[Environment Name]\n"
+                              "  Example:\n    - 31234565435-uat\n", showTime=False)
+                sys.exit(2)
+        else:
+            self.project = self.repo_name.split("-")[-1]
+            if len(self.branch_name.split("-")) == 2:
+                self.account = self.branch_name.split("-")[0]
+                self.environment = self.branch_name.split("-")[1]
+            else:
+                self.account = 'none'
+                self.environment = self.branch_name
 
     def get_env_files(self):
         """
@@ -113,14 +154,15 @@ class Core():
         try:    
             with open(self.common_shell_file, 'r') as fp:
                 obj = hcl.load(fp)
-                self.china_deployment = obj.get('china_deployment', '')
-                self.dr = obj.get('dr', '')
-                self.global_resource = obj.get('global_resource', '')
-                self.target_environment_type = obj.get('target_environment_type', 'region')
-                self.mode = obj.get('mode', '')
-                self.region = obj.get('region', '')
-                self.tf_cloud_backend = obj.get('tf_cloud_backend', '')               
-                self.tf_cloud_org2 = obj.get('tf_cloud_org', '')               
+                self.china_deployment = obj.get('china_deployment', '').lower()
+                self.dr = obj.get('dr', '').lower()
+                self.global_resource = obj.get('global_resource', '').lower()
+                self.target_environment_type = obj.get('target_environment_type', 'region').lower()
+                self.mode = obj.get('mode', '').lower()
+                self.region = obj.get('region', '').lower()
+                self.backend = obj.get('backend', '').lower()
+                self.tf_cloud_backend = obj.get('tf_cloud_backend', 'simple')   .lower()            
+                self.tf_cloud_org2 = obj.get('tf_cloud_org', '').lower()               
                 if sys.platform.startswith("win"):
                     self.tf_cli_args = obj.get('tf_cli_args', '').replace('"','').replace('${REPO_PATH}',self.repo_root).replace('$REPO_PATH',self.repo_root).replace('\\', '\\\\').replace('/', '\\\\')
                 else:
@@ -176,10 +218,11 @@ class Core():
         arg_prefix = '-var-file='
         self.var_file_args = [arg_prefix + item for item in self.var_file_args_list]
 
-    def get_backend_configuration(self):
+    def set_site_configuration(self):
         """
         Parse Data returned by get_deployment_attributes and
-        return bucket, backend_region for deployment.
+        return prefix and module for blue/green, site or
+        the default region based deployment.
         """
 
         if self.target_environment and self.target_environment_type != 'region':
@@ -199,10 +242,18 @@ class Core():
                 self.prefix = self.project
                 self.module = self.resource
 
+    def set_backend_configuration(self, backend_type=None):
+        """
+        Parse Data returned by get_deployment_attributes and
+        return bucket, backend_region for deployment.
+        """
+
+        self.backend_type = backend_type or self.cloud
+        self.backend_region = None
         self.tf_cloud_backend_org = None
-        
-        if self.cloud == "aws":
-            if self.global_resource == "True" or self.resource.__contains__("53") == True:
+     
+        if self.backend_type == "aws":
+            if self.global_resource == "true" or any(word in self.resource for word in self.global_resources):
                 self.bucket_key = "{prefix}/{module}/terraform.tfstate".format(
                     prefix=self.prefix,
                     module=self.module
@@ -226,24 +277,57 @@ class Core():
                     self.backend_region = "cn-north-1"
                 else:
                     self.backend_region = "us-east-1"
-        elif self.cloud == "azr":
-            self.bucket_key = "{env}/{prefix}/{region}/{module}/terraform.tfstate".format(
-                env=self.environment,
-                prefix=self.prefix,
-                region=self.region,
-                module=self.module
-            )                
+        elif self.backend_type == "azr":
+            if self.global_resource == "true" or any(word in self.resource for word in self.global_resources):    
+                self.bucket_key = "{env}/{prefix}/{module}/terraform.tfstate".format(
+                    env=self.environment,
+                    region=self.region,
+                    module=self.module
+                )
+            else:
+                self.bucket_key = "{env}/{prefix}/{region}/{module}/terraform.tfstate".format(
+                    env=self.environment,
+                    prefix=self.prefix,
+                    region=self.region,
+                    module=self.module
+                )
 
+            self.bucket_prefix = ''.join(char.lower() for char in self.bucket_prefix if char.isalnum())
             if self.dr == "true":
                 self.bucket = "{}{}{}dr".format(self.bucket_prefix, self.account, self.environment)
             else:
                 self.bucket = "{}{}{}".format(self.bucket_prefix, self.account, self.environment)
-        elif (self.cloud not in ['aws', 'azr', 'gcp']) and (self.tf_cloud_backend == "true"):
-            self.bucket_key = "{env}-{prefix}-{module}".format(
-                env=self.environment,
-                prefix=self.prefix.replace("/","-"),
-                module=self.module.replace("/","-")
-            )
+            
+            if len(self.bucket) > 24:
+                console.error("  Storage Account Name exceeds 24 characters.\n  Storage Account: " + self.bucket + "\n  Please provide a shorter name.\n", showTime=False)
+                sys.exit(2)
+
+        elif self.backend_type == "tfc" or self.tf_cloud_backend == "true":
+            if self.tf_cloud_backend == "simple":
+                self.bucket_key = "{env}-{prefix}-{module}".format(
+                    env=self.environment,
+                    prefix=self.prefix.replace("/","-"),
+                    module=self.module.replace("/","-")
+                )
+            elif self.tf_cloud_backend == "extended":
+                if self.global_resource == "true" or any(word in self.resource for word in self.global_resources):
+                    self.bucket_key = "{cloud}-{env}-{prefix}-{module}".format(
+                        cloud = self.cloud,
+                        env=self.environment,
+                        prefix=self.prefix.replace("/","-"),
+                        module=self.module.replace("/","-")
+                    )
+                else:
+                    self.bucket_key = "{cloud}-{env}-{prefix}-{region}-{module}".format(
+                        cloud = self.cloud,
+                        env=self.environment,
+                        prefix=self.prefix.replace("/","-"),
+                        region=self.region.replace("-",""),
+                        module=self.module.replace("/","-")
+                    )
+            else:
+                console.error("  Invalid tf_cloud_backend value.\n  Please provide a valid value: simple/extended\n", showTime=False)
+                sys.exit(2)
             if self.tf_cloud_org1:
                 self.tf_cloud_backend_org = self.tf_cloud_org1
             else:
@@ -277,4 +361,5 @@ class Core():
             **{"AWS_REGION": self.region},
             **{"AZR_REGION": self.region},
             **{"REPO_PATH": self.repo_root},
+            **{"REPO_PREFIX": self.repo_prefix},
             )

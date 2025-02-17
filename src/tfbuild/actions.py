@@ -170,7 +170,7 @@ class Action(Core):
         Initialize the terraform backend using the appropriate env,
         and variables.
         """
-        if self.cloud == "aws":
+        if self.backend_type == "aws":
             console.success("  Initializing AWS Backend", showTime=False)
             self.command(
                 [
@@ -180,7 +180,7 @@ class Action(Core):
                     '-backend-config', 'key='+self.bucket_key
                     ]
                 ) 
-        elif self.cloud == "azr":
+        elif self.backend_type == "azr":
             console.success("  Initializing AZR Backend", showTime=False)
             self.command(
                 [
@@ -191,7 +191,7 @@ class Action(Core):
                     '-backend-config', self.secret_path
                     ]
                 )
-        elif self.tf_cloud_backend == "true":
+        elif self.backend_type == "tfc" or self.tf_cloud_backend == "true":
             console.success("  Initializing Terraform Cloud Backend", showTime=False)
             Workspace(self.bucket_key, self.platform, self.version_tf(), self.tf_cloud_backend_org)
             if not os.path.exists('.terraform'):
@@ -305,14 +305,8 @@ class Action(Core):
             if len(modules_totaint) >= 1:
                 i = 0
                 for i in range(len(modules_totaint)):
-                    self.command(
-                        [
-                            'echo', 'taint',
-                            '-var-file='+self.common_env_file,
-                            '-var-file='+self.local_env_file,
-                            '-module', modules_totaint[i], resources_totaint[i]
-                            ]
-                        ) 
+                    taint = ['terraform', 'taint'] + self.var_file_args + ['-module='+modules_totaint[i], resources_totaint[i]] + sys.argv[2:]
+                    self.command(taint) 
                     i += 1
 
     def test(self):
@@ -333,10 +327,11 @@ class Action(Core):
         console.success("  Repo Name          = {repo_name}".format(**serialized), showTime=False)
         console.success("  Repo Root          = {repo_root}".format(**serialized), showTime=False)
         console.success("  Repo URL           = {repo_url}".format(**serialized), showTime=False)
-        console.success("  Branch Name        = {branch_name}".format(**serialized), showTime=False)
-        console.success("  Resource Name      = {resource}".format(**serialized), showTime=False)
+        console.success("  Repo Preefix       = {repo_prefix}".format(**serialized), showTime=False)
         console.success("  Cloud              = {cloud}".format(**serialized), showTime=False)
         console.success("  Project            = {project}".format(**serialized), showTime=False)
+        console.success("  Branch Name        = {branch_name}".format(**serialized), showTime=False)
+        console.success("  Resource Name      = {resource}".format(**serialized), showTime=False)
         console.success("  Account            = {account}".format(**serialized), showTime=False)
         console.success("  Environment        = {environment}".format(**serialized), showTime=False)
         console.success("  Common Shell File  = {common_shell_file}".format(**serialized), showTime=False)
@@ -352,6 +347,8 @@ class Action(Core):
         console.success("  Backend Region     = {backend_region}".format(**serialized), showTime=False)
         console.success("  Bucket             = {bucket}".format(**serialized), showTime=False)
         console.success("  Key                = {bucket_key}".format(**serialized), showTime=False)
+        console.success("  Backend Type       = {backend_type}".format(**serialized), showTime=False)
+        console.success("  TF Cloud Backend   = {tf_cloud_backend}".format(**serialized), showTime=False)
         console.success("  China Deployment   = {china_deployment}".format(**serialized), showTime=False)
 
         console.warn("\n  Terraform Variables", showTime=False)
