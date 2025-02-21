@@ -3,6 +3,7 @@
 from .core import Core
 from .workspace import Workspace
 from py_console import console
+from importlib.metadata import version, PackageNotFoundError
 import json
 import jsonpickle
 import os
@@ -392,8 +393,7 @@ class Action(Core):
         """
         Get application version from VERSION with cli call.
         """
-        version = pkg_resources.require(self.app_config)[0].version
-        console.success("  " + self.app_config.upper() + " version: " + version, showTime=False)
+        console.success("  " + self.app_config.upper() + " version: " + version("tfbuild"), showTime=False)
 
     def version_git(self):
         """
