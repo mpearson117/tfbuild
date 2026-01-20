@@ -17,7 +17,7 @@ class Core():
             self.build_id = os.getenv('BUILD_ID')
             self.target_environment = target_environment
             self.location = os.path.realpath(os.getcwd())
-            self.repo_name = str(os.path.splitext(os.path.basename(self.repo_url))[0]).lower()
+            self.repo_name = self.get_repo_name(self.repo_url)
             self.branch_name = str(Repo(self.repo_root).active_branch).lower()
             self.clouds_list = ['aws', 'azr', 'vmw', 'gcp']
             self.global_resources = ["53", "global"]
@@ -58,6 +58,19 @@ class Core():
         except IndexError:
             console.error("  " + str(os.path.splitext(os.path.basename(self.repo_root))[0]).upper() + " is a local repository with no remotes. !\n", showTime=False)
             sys.exit(2)
+
+    def get_repo_name(self, repo_url: str) -> str:
+        """
+        Extract the repository name from various Git remote URL formats.
+        """
+
+        for prefix in ["codecommit::", "codecommit://", "https://", "http://", "git@"]:
+            if repo_url.startswith(prefix):
+                repo_url = repo_url[len(prefix):]
+
+        repo_url = repo_url.replace(":", "/").replace("@", "/")
+        repo_name = os.path.splitext(os.path.basename(repo_url))[0]
+        return repo_name.lower()
 
     def load_configs(self):
         config = confuse.LazyConfig(self.app_config, __name__)
