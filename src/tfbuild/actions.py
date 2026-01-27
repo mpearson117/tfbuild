@@ -187,9 +187,8 @@ class Action(Core):
                 [
                     'terraform', 'init',
                     '-backend-config', 'storage_account_name='+self.bucket, 
-                    '-backend-config', 'container_name='+self.account+'1', 
+                    '-backend-config', 'container_name='+self.azr_sa_container_name, 
                     '-backend-config', 'key='+self.bucket_key, 
-                    '-backend-config', self.secret_path
                     ]
                 )
         elif self.backend_type == "tfc" or self.tf_cloud_backend == "true":

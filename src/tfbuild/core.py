@@ -174,7 +174,9 @@ class Core():
                 self.mode = obj.get('mode', '').lower()
                 self.region = obj.get('region', '').lower()
                 self.backend = obj.get('backend', '').lower()
-                self.tf_cloud_backend = obj.get('tf_cloud_backend', 'simple')   .lower()            
+                self.azr_sa_name = obj.get('azr_sa_name', '')
+                self.azr_sa_container_name = obj.get('azr_sa_container_name', '')
+                self.tf_cloud_backend = obj.get('tf_cloud_backend', 'simple').lower()            
                 self.tf_cloud_org2 = obj.get('tf_cloud_org', '').lower()               
                 if sys.platform.startswith("win"):
                     self.tf_cli_args = obj.get('tf_cli_args', '').replace('"','').replace('${REPO_PATH}',self.repo_root).replace('$REPO_PATH',self.repo_root).replace('\\', '\\\\').replace('/', '\\\\')
@@ -291,6 +293,7 @@ class Core():
                 else:
                     self.backend_region = "us-east-1"
         elif self.backend_type == "azr":
+            self.backend_region = "none"
             if self.global_resource == "true" or any(word in self.resource for word in self.global_resources):    
                 self.bucket_key = "{env}/{prefix}/{module}/terraform.tfstate".format(
                     env=self.environment,
@@ -306,8 +309,10 @@ class Core():
                 )
 
             self.bucket_prefix = ''.join(char.lower() for char in self.bucket_prefix if char.isalnum())
-            if self.dr == "true":
-                self.bucket = "{}{}{}dr".format(self.bucket_prefix, self.account, self.environment)
+            if self.azr_sa_container_name == '':
+                self.azr_sa_container_name = 'tfstate'
+            if self.azr_sa_name != '':
+                self.bucket = self.azr_sa_name
             else:
                 self.bucket = "{}{}{}".format(self.bucket_prefix, self.account, self.environment)
             

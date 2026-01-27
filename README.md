@@ -1,185 +1,292 @@
 # TFBuild
 
-[Terraform](https://www.terraform.io/) build management wrapper.
+TFBuild is a Terraform execution and state-management wrapper designed to standardize infrastructure deployments across multiple cloud platforms and execution backends.
+
+It enforces consistent naming, backend selection, authentication models, and environment separation, while reducing repetitive boilerplate in Terraform workflows.
+
+---
 
 ## Overview
 
-TFBuild is designed to standardize:
+TFBuild standardizes Terraform execution across the following platforms:
 
-- **AWS Deployments**: Utilizes distributed per-account, per-environment S3-backed Terraform states.
-- **Azure Deployments**: Centralized Storage Account-backed states.
-- **VMware Deployments**: Uses Terraform Cloud to dynamically create execution workspaces during initialization.
-- **GCP Support**: Coming soon...
+- AWS Deployments  
+  Distributed, per-account, per-environment S3-backed Terraform states  
+  Primary and DR buckets with bidirectional replication
+
+- Azure Deployments  
+  Centralized Azure Storage Account-backed Terraform states  
+  Azure-native geo-redundant replication (RA-GRS / RA-GZRS)
+
+- VMware Deployments  
+  Uses Terraform Cloud  
+  Dynamically creates execution workspaces during initialization
+
+- GCP Support  
+  Planned / coming soon
+
+---
 
 ## Supported Operating Systems
 
-TFBuild currently supports:
+TFBuild supports the following platforms:
 
-- **MacOS** (64-bit/ARM)
-- **Linux** (64-bit/ARM)
-- **Windows**
+- macOS (x86_64 / Apple Silicon)
+- Linux (x86_64 / ARM)
+- Windows
+
+---
 
 ## Installation
 
 ### Prerequisites
 
-- Python **>= 3.8** (MacOS M1 requires Python **>= 3.10**).
+- Python 3.8 or higher  
+- macOS Apple Silicon requires Python 3.10 or higher
 
 ### Installation Methods
 
-#### 1. Install via pip:
+Install via PyPI:
 
-```sh
-pip install tfbuild
-```
+    pip install tfbuild
 
-#### 2. Install from a custom PyPi repository:
+Install from a custom PyPI repository:
 
-```sh
-pip install --extra-index-url https://<repo_url>/pypi-repo/simple tfbuild
-```
+    pip install --extra-index-url https://<repo_url>/pypi-repo/simple tfbuild
 
-#### 3. Install from source:
+Install from source:
 
-```sh
-git clone <repo_url>.git
-cd <local_repo_folder>
-pip install -e .
-```
+    git clone <repo_url>.git
+    cd <local_repo_folder>
+    pip install -e .
+
+---
 
 ## Terraform Execution Prerequisites
 
-TFBuild assumes deployments are executed from a Git repository with the following structure:
+TFBuild assumes deployments are executed from a Git repository following standardized naming and branching conventions.
 
-### Git Repository Naming Conventions
+---
 
-#### Repository Naming Standard
+## Git Repository Naming Conventions
 
-- **Simple**: `<Cloud_ID>-<Project_Acronym>` (for repositories with built-in grouping, e.g., GitLab, BitBucket).
-- **Extended**: `<Repository_Prefix>-<Cloud_ID>-<Project_Acronym>` (for platforms without grouping, e.g., GitHub).
+### Repository Naming
 
-#### Branch Naming Standard
+Simple format (platforms with grouping support):
 
-- **Default**: `<Account_ID>-<Environment>`
-- **Simple**: `<Environment>` (used when `Cloud_ID` does not match AWS, Azure, GCP, or VMware).
+    <Cloud_ID>-<Project_Acronym>
 
-#### Example
+Extended format (platforms without grouping):
 
-- **Repository**: 
-  - Simple: `aws-k8s`
-  - Extended: `iac-aws-k8s`
-- **Branch**: `234625632123-dev` or `AWSShared-dev` (without dashes in `<Account_ID>`).
+    <Repository_Prefix>-<Cloud_ID>-<Project_Acronym>
 
-### Environment-Specific Branch Layout
+### Branch Naming
 
-Terraform configurations (`*.tf`) remain consistent across branches. Changes should be merged from lower to higher environments. Terraform variables should be introduced separately per environment at the lowest environmental banch, and managed through PRs moving the changes to the required branch.
+Default format (no dashes in `<Account_ID>`):
+
+    <Account_ID>-<Environment>
+
+Simple format:
+
+    <Environment>
+
+Used when Cloud_ID does not match AWS, Azure, GCP, or VMware.
+
+### Examples
+
+Repositories:
+
+    aws-k8s
+    iac-aws-k8s
+
+Branches:
+
+    234625632123-dev
+    AWSShared-dev
+
+---
+
+## Environment-Specific Branch Layout
+
+Terraform configuration files remain identical across branches.
+
+- Changes flow from lower to higher environments
+- Environment-specific variables are introduced at the lowest environment branch
+- Changes are promoted via pull requests
 
 ![Repo-Architecture](https://github.com/mpearson117/tfbuild/blob/main/images/repo_architecture.svg?raw=True)
 
-## Terraform Backend Configurations
+---
 
-By default, the backend is selected based on the `Cloud_ID` from the repository naming convention. This can be overridden using the `backend` configuration variable in Git deployment scripts.
+## Terraform Backend Selection
 
-### Backend Options
+By default, the backend is inferred from the repository Cloud_ID.  
+This can be overridden using the backend configuration variable.
 
-| Backend | Description |
-|---------|------------|
-| `aws` | Uses AWS S3 for state management |
-| `azr` | Uses Azure Storage Account |
-| `tfc` | Uses Terraform Cloud |
+Supported backends:
 
-If `Cloud_ID` is not recognized and no supported backend is configured, the deployment defaults to **local state management**.
+- aws — AWS S3 remote state
+- azr — Azure Storage Account remote state
+- tfc — Terraform Cloud workspaces
 
-### Global Resources
+If no backend is detected or configured, TFBuild falls back to local state.
 
-Are automatically detected if they contain `53` or `global` in their names.  
-In this case `<Region>` is removed from the backend paths or TFC extended workspace names.
+---
 
-For declaring all resources in the project global, as in Active-Passive deployments,  
-`global_resource = "true"` needs to exist in the `../common/environments/env_<Environment>.hcl` global declarations file
+## Global Resources
 
-### 1. AWS S3 Backend
+Resources are treated as global if their names contain “53” or “global”.
 
-S3 buckets are an execution prerequisite, to the AWS deployment.
+- Region is removed from backend paths
+- Terraform Cloud workspaces use global naming
 
-**Bucket Naming Standard:**  
-- **Primary**: `<Bucket_Prefix>.<Account_ID>.<Environment>`  
-- **Disaster Recovery (DR)**: `<Bucket_Prefix>.<Account_ID>.<Environment>.dr`  
+To explicitly mark all resources as global, define the following in the environment file:
 
-**Example:**  
-- Primary: `inf.tfstate.234625632123.dev`  
-- DR: `inf.tfstate.234625632123.dev.dr`  
+    global_resource = "true"
 
-( `dr = "true"` needs to exist in the `../common/environments/env_<Environment>.hcl` global declarations file )
- 
-Buckets are bi-directionally replicated.  
-Primary and a DR bucket are available, per account per environment.  
-When using account targeted S3 buckets for account and environment, there should be no conflicts between states, but uniformity for ease of usage.  
- 
-**Backend Path:**  
-- General resources: `<Project_Acronym>/<Region>/<Current_Dir>/terraform.tfvars`
-- Global resources: `<Project_Acronym>/<Current_Dir>/terraform.tfvars`
+File location:
 
-### 2. Terraform Cloud Workspaces
+    ../common/environments/env_<Environment>.hcl
 
-**Workspace Naming Standard:**  
-- **Simple**: `<Environment>-<Project_Acronym>-<Current_Dir>`  
-- **Extended (Default)**: `<Cloud_ID>-<Environment>-<Project_Acronym>-<Region>-<Current_Dir>`
-- **Extended (Global)**: `<Cloud_ID>-<Environment>-<Project_Acronym>-<Current_Dir>`
+---
 
-### 3. Azure Storage Account Backend
+## 1. AWS S3 Terraform Remote State
 
-Storage Accounts must be created during subscription creation.
-Similar naming as S3 buckets, but without dots, as SA names need to be alpha-numeric.
-TFBuild will validate the Storage Account name length and if it is longer than the Azure supported 24 characters it will exit with a handled error.
+S3 buckets are a hard prerequisite for AWS deployments.
 
-**Storage Account Naming Standard:**  
-- **Primary**: `<Bucket_Prefix><Subscription_ID><Environment>`  
-- **DR**: `<Bucket_Prefix><Subscription_ID><Environment>dr`  
+Bucket naming standard:
 
-**Example:**  
-- Primary: `inftfstateshareddev`  
-- DR: `inftfstateshareddevdr`  
+Primary:
 
-**Backend Path:**  
-- General resources: `<Environment>/<Project_Acronym>/<Region>/<Current_Dir>/terraform.tfvars`
-- Global resources: `<Environment>/<Project_Acronym>/<Current_Dir>/terraform.tfvars`
+    <Bucket_Prefix>.<Account_ID>.<Environment>
+
+Disaster Recovery:
+
+    <Bucket_Prefix>.<Account_ID>.<Environment>.dr
+
+Example:
+
+    inf.tfstate.234625632123.dev
+    inf.tfstate.234625632123.dev.dr
+
+( `dr = "true"` needs to exist in the `../common/environments/env_<Environment>.hcl` global declarations file )  
+
+Buckets are bidirectionally replicated between primary and DR regions.  
+
+Terraform state paths:
+
+Regional resources:
+
+    <Project>/<Region>/<Current_Dir>/terraform.tfvars
+
+Global resources:
+
+    <Project>/<Current_Dir>/terraform.tfvars
+
+---
+
+## 2. Terraform Cloud Workspaces (VMware)
+
+Workspace naming standards:
+
+Simple:
+
+    <Environment>-<Project>-<Current_Dir>
+
+Extended (default):
+
+    <Cloud_ID>-<Environment>-<Project>-<Region>-<Current_Dir>
+
+Extended (global):
+
+    <Cloud_ID>-<Environment>-<Project>-<Current_Dir>
+
+---
+
+## 3. Azure Terraform Remote State
+
+### Design Principles
+
+- Azure Storage Accounts for Terraform state must be created during subscription bootstrap
+- Storage Account names must be:
+  - Lowercase alphanumeric only
+  - Maximum length of 24 characters
+  - No dots or special characters
+- Naming is conceptually similar to S3 buckets but constrained by Azure requirements
+
+TFBuild pre-validates the computed Storage Account name and exits with a handled error if the name exceeds Azure limits.
+
+### Authentication Model (Recommended)
+
+Microsoft Entra ID (Azure AD) authentication is strongly recommended.
+
+- No shared access keys
+- No SAS tokens
+- Access controlled via RBAC
+
+The tenant context must be explicitly set:
+
+    export ARM_TENANT_ID=<tenant-id>
+
+Recommended backend configuration:
+
+    terraform {
+      backend "azurerm" {
+        use_azuread_auth = true
+      }
+    }
+
+### Storage Account Naming
+
+    <Bucket_Prefix><Subscription_Shortcode><Environment>
+
+Example:
+
+    comtfstatemmswprd
+
+Terraform state paths:
+
+Regional resources:
+
+    <Environment>/<Project>/<Region>/<Current_Dir>/terraform.tfvars
+
+Global resources:
+
+    <Environment>/<Project>/<Current_Dir>/terraform.tfvars
+
+---
 
 ## Usage
 
-TFBuild commands can be executed as:
+TFBuild commands:
 
-```sh
-tfbuild <command>
-tfbuild <command>-<site>
+    tfbuild <command>
+    tfbuild <command>-<site>
 
-tfb <command>
-tfb <command>-<site>
-```
+    tfb <command>
+    tfb <command>-<site>
 
-### Supported Commands
+Supported commands include:
 
-| Command | Description |
-|---------|-------------|
-| `apply` | Apply Terraform configuration |
-| `config` | Configure global variables |
-| `destroy` | Destroy Terraform configuration |
-| `destroyforce` | Destroy without confirmation |
-| `help` | Display help menu |
-| `init` | Initialize backend & clean local cache |
-| `plan` | Create Terraform plan |
-| `plandestroy` | Plan Terraform destroy scenario |
-| `reinit` | Initialize backend & keep cache |
-| `replan` | Re-run Terraform plan |
-| `taint` | Taint specific resources |
-| `test` | Test run displaying project variables |
-| `tfimport` | Import existing resources |
-| `update` | Update Terraform modules |
-| `version` | Display TFBuild version |
+- init — initialize backend and clean cache
+- reinit — initialize backend without clearing cache
+- plan — generate execution plan
+- apply — apply Terraform configuration
+- destroy — destroy infrastructure
+- destroyforce — destroy without confirmation
+- plandestroy — plan destruction
+- taint — taint resources
+- tfimport — import existing resources
+- update — update Terraform modules
+- config — configure global variables
+- test — dry-run variable inspection
+- version — display TFBuild version
 
 Deployment Regions allow the deployment of the same code to multiple regions.  
 
-### Example Usage
+---
+
+### Usage Example
 
 - Deploy in the designated DR site: `tfbuild apply-dr`
 
@@ -207,6 +314,8 @@ Terraform options can be passed directly:
 tfbuild plan -json
 tfbuild apply -compact-warnings -no-color
 ```
+
+---
 
 ## Deployment Global Variables
 
@@ -246,19 +355,21 @@ Environment and site specific, not changeable per resource.
 Variables declared in the environment file are declared as runtime variables, usable both in Linux and Windows deployments.  
 Example: `dr = "true"`
 
-Speciffic deployment site can be configured as per the Repo architecture above, and can be called by appending a `-<site>' to any command:
+Speciffic deployment site can be configured as per the Repo architecture above, and can be called by appending a `-<site>` to any command:
 Example: `tfbuild <command>-<site>`
 
 | Variable | Description | Usage Target | Default | Required |
 |----------|-------------|:------------:|:-------:|:--------:|
 | backend | Backend type override | Cloud Backend | `` | no |
-| backend_region | Hardcoded tf remote state backend S3/SA region | Cloud Backend | `us-east-1` | yes |
+| backend_region | Hardcoded tf remote state backend S3/SA region | AWS Backend | `us-east-1` | yes |
 | china_deployment | Hardcoded tf remote state backend switch. Can be activated with `china_deployment = "true"` | AWS Backend | `cn-north-1` | yes |
-| dr | Backend S3/SA `backend_region` switch from primary to secondary `us-west-2`. Can be activated with `dr = "true"` | Cloud Backend | - | no |
+| dr | Backend S3/SA `backend_region` switch from primary to secondary `us-west-2`. Can be activated with `dr = "true"` | AWS Backend | - | no |
 | global_resource | Declaring all resources in the project global, `global_resource = "true"` | AWS Backend | - | no |
 | mode | For in-region `blue/green` deployment by setting the variable accordingly | All Backends | - | no |
 | region | Deployment region, used in remote state backend path | Cloud Backend Key | - | yes |
 | *site | In region secondary site deployment designation | All Backends | - | no |
+| azr_sa_name | Storage Account Name Default Override | AZR Backend | - | no |
+| azr_sa_container_name | Storage Account Container name | AZR Backend | `tfstate` | yes |
 | tf_cli_args | Custom TF variables to be passed to the deployment | TER | - | no |
 | tf_cloud_backend | TFC Backend. Can be activated with `tf_cloud_backend = "true"` **will be deprecated in favor of `backend = tfc`** | TFC Backend (VMW) | - | yes |
 | tf_cloud_org | Terraform Cloud Organization | TFC Backend (VMW) | - | no |
@@ -288,14 +399,27 @@ Variable declarations are needed in coresponding deployment `variables.tf` file"
 | site | Used in naming site speciffic resources | no |
 | tf_cli_args | Custom TF variables to be passed to the deployment | no |
 
-## Upgrade
 
-```sh
-pip install --upgrade tfbuild
-```
+---
 
-## Uninstall
+## Upgrade and Uninstall
 
-```sh
-pip uninstall tfbuild
-```
+Upgrade TFBuild:
+
+    pip install --upgrade tfbuild
+
+Uninstall TFBuild:
+
+    pip uninstall tfbuild
+
+---
+
+## Intended Audience
+
+TFBuild is intended for:
+
+- Multi-account and multi-subscription environments
+- Platform and Cloud Infrastructure teams
+- Regulated and audited environments
+- CI/CD-driven Terraform execution
+- Enterprise-scale infrastructure governance
